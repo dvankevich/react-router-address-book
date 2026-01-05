@@ -32,6 +32,11 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
   // to the component state on back/forward button clicks
   useEffect(() => {
     setQuery(q || "");
+    // Якщо q став порожнім (наприклад, після натискання кнопки очищення)
+    // ми повертаємо фокус в інпут
+    if (q === null || q === "") {
+      searchInputRef.current?.focus();
+    }
   }, [q]);
 
   return (
@@ -73,17 +78,14 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
                 onClick={() => {
                   setQuery(""); // Очищаємо локальний стан
                   // Програмно відправляємо порожню форму, щоб скинути URL та список
-                  submit({ q: "" });
-                  setTimeout(() => {
-                    searchInputRef.current?.focus();
-                  }, 0);
+                  submit({ q: "" }); // Очищаємо URL (це змінить q і запустить useEffect)
                 }}
               >
                 ✕
               </button>
             )}
 
-            <div aria-hidden hidden={true} id="search-spinner" />
+            <div aria-hidden hidden={!searching} id="search-spinner" />
           </Form>
           <Form method="post">
             <button type="submit">New</button>
