@@ -8,7 +8,7 @@ import {
 } from "react-router";
 import { getContacts } from "../data";
 import type { Route } from "./+types/sidebar";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
@@ -23,16 +23,10 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
   // the query now needs to be kept in state
   const [query, setQuery] = useState(q || "");
   const submit = useSubmit();
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const searching =
     navigation.location &&
     new URLSearchParams(navigation.location.search).has("q");
-
-  // useEffect(() => {
-  //   const searchField = document.getElementById("q");
-  //   if (searchField instanceof HTMLInputElement) {
-  //     searchField.value = q || "";
-  //   }
-  // }, [q]);
 
   // we still have a `useEffect` to synchronize the query
   // to the component state on back/forward button clicks
@@ -58,6 +52,7 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
             role="search"
           >
             <input
+              ref={searchInputRef}
               aria-label="Search contacts"
               className={searching ? "loading" : ""}
               //defaultValue={q || ""}
@@ -70,6 +65,24 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
               // switched to `value` from `defaultValue`
               value={query}
             />
+            {/* Кнопка очищення (показуємо лише якщо в інпуті є текст) */}
+            {query && (
+              <button
+                type="button"
+                id="search-clear"
+                onClick={() => {
+                  setQuery(""); // Очищаємо локальний стан
+                  // Програмно відправляємо порожню форму, щоб скинути URL та список
+                  submit({ q: "" });
+                  setTimeout(() => {
+                    searchInputRef.current?.focus();
+                  }, 0);
+                }}
+              >
+                ✕
+              </button>
+            )}
+
             <div aria-hidden hidden={true} id="search-spinner" />
           </Form>
           <Form method="post">
@@ -85,7 +98,10 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
                     className={({ isActive, isPending }) =>
                       isActive ? "active" : isPending ? "pending" : ""
                     }
-                    to={`contacts/${contact.id}`}
+                    to={{
+                      pathname: `contacts/${contact.id}`,
+                      search: q ? `?q=${q}` : "",
+                    }}
                   >
                     {contact.first || contact.last ? (
                       <>
