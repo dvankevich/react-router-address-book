@@ -5,6 +5,8 @@ import {
   Outlet,
   useNavigation,
   useSubmit,
+  useNavigate,
+  useLocation,
 } from "react-router";
 import { getContacts } from "../data";
 import type { Route } from "./+types/sidebar";
@@ -27,6 +29,19 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
   const searching =
     navigation.location &&
     new URLSearchParams(navigation.location.search).has("q");
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  // 1. Справжній пошук — це коли ми змінюємо параметри URL, але залишаємось на тому ж шляху
+  const isSearching =
+    navigation.location &&
+    new URLSearchParams(navigation.location.search).has("q") &&
+    navigation.location.pathname === location.pathname;
+
+  // 2. Справжня навігація — це коли змінюється шлях до контакту
+  const isNavigatingToContact =
+    navigation.state === "loading" &&
+    navigation.location?.pathname !== location.pathname;
 
   // we still have a `useEffect` to synchronize the query
   // to the component state on back/forward button clicks
@@ -59,8 +74,7 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
             <input
               ref={searchInputRef}
               aria-label="Search contacts"
-              className={searching ? "loading" : ""}
-              //defaultValue={q || ""}
+              className={isSearching ? "loading" : ""}
               id="q"
               name="q"
               // synchronize user's input to component state
@@ -78,14 +92,15 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
                 onClick={() => {
                   setQuery(""); // Очищаємо локальний стан
                   // Програмно відправляємо порожню форму, щоб скинути URL та список
-                  submit({ q: "" }); // Очищаємо URL (це змінить q і запустить useEffect)
+                  // submit({ q: "" }); // Очищаємо URL (це змінить q і запустить useEffect)
+                  navigate(location.pathname, { replace: true });
                 }}
               >
                 ✕
               </button>
             )}
 
-            <div aria-hidden hidden={!searching} id="search-spinner" />
+            <div aria-hidden hidden={!isSearching} id="search-spinner" />
           </Form>
           <Form method="post">
             <button type="submit">New</button>
@@ -126,7 +141,8 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
       </div>
       <div
         className={
-          navigation.state === "loading" && !searching ? "loading" : ""
+          // Ефект "блідості" (opacity) додаємо ТІЛЬКИ при переході між контактами
+          isNavigatingToContact ? "loading" : ""
         }
         id="detail"
       >
