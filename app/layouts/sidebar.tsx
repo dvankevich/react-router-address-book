@@ -49,13 +49,18 @@ export default function SidebarLayout({ loaderData }: Route.ComponentProps) {
         <div>
           <Form
             id="search-form"
-            onChange={(event) => submit(event.currentTarget)}
+            onChange={(event) => {
+              const isFirstSearch = q === null;
+              submit(event.currentTarget, {
+                replace: !isFirstSearch,
+              });
+            }}
             role="search"
           >
             <input
               aria-label="Search contacts"
               className={searching ? "loading" : ""}
-              defaultValue={q || ""}
+              //defaultValue={q || ""}
               id="q"
               name="q"
               // synchronize user's input to component state
